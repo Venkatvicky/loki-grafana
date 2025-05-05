@@ -11,6 +11,11 @@ global:
     accessModes: ["ReadWriteOnce"]
     size: 10Gi
 
+# RBAC Configuration
+rbac:
+  create: true  # Set to false if you want to manage RBAC separately
+  pspEnabled: false  # PodSecurityPolicy (deprecated in 1.25+)
+
 # Service Account Configuration
 serviceAccount:
   create: true
