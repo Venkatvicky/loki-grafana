@@ -14,7 +14,12 @@ global:
 # RBAC Configuration
 rbac:
   create: true  # Set to false if you want to manage RBAC separately
-  pspEnabled: false  # PodSecurityPolicy (deprecated in 1.25+)
+  pspEnabled: false  # PodSecurityPolicy (deprecated in 1.25+) 
+
+  # Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1  # Or use maxUnavailable: 1
 
 # Service Account Configuration
 serviceAccount:
