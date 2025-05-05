@@ -10,6 +10,12 @@ global:
       - ReadWriteOnce
     size: 10Gi
 
+# Service Account Configuration
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
 # S3 Configuration
 s3:
   enabled: true
@@ -45,11 +51,6 @@ components:
       requests:
         cpu: 500m
         memory: 1Gi
-    # Increased in-memory cache for ingesters
-    config:
-      chunk_idle_period: 1h
-      chunk_target_size: 1572864  # 1.5MB
-      max_chunk_age: 2h
 
   querier:
     replicas: 2
@@ -60,10 +61,6 @@ components:
       requests:
         cpu: 500m
         memory: 1Gi
-    # Query parallelization
-    config:
-      max_concurrent: 2048
-      timeout: 10m
 
   queryFrontend:
     replicas: 2
@@ -74,10 +71,6 @@ components:
       requests:
         cpu: 200m
         memory: 512Mi
-    # In-memory result cache
-    config:
-      cache_results: true
-      max_cache_freshness: 1m
 
   compactor:
     replicas: 1
@@ -108,7 +101,7 @@ service:
 
 gateway:
   enabled: true
-  replicas: 2
+  replicas: 2  # Fixed from typo 'replicas'
   ingress:
     enabled: false
     hosts:
@@ -116,11 +109,7 @@ gateway:
     annotations:
       kubernetes.io/ingress.class: nginx
 
-# Cache configuration (in-memory only)
+# Cache configuration
 cache_config:
   enable_fifocache: true
   default_validity: 12h
-  background_writeback: true
-  fifocache:
-    max_size_bytes: 1GB  # Per-component cache size
-    validity: 6h
