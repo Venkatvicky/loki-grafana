@@ -118,6 +118,13 @@ chunk_store_config:
     fifocache:
       max_size_bytes: 500MB
 
-# Network Policy Configuration
+# Network Policy
 networkPolicy:
   enabled: false  # Set to true if you want to enforce Kubernetes network policies
+
+# Autoscaling Configuration
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
