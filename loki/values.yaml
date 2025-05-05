@@ -1,3 +1,5 @@
+# values.yaml - Complete Loki Configuration with S3
+
 global:
   image:
     repository: grafana/loki
@@ -6,8 +8,7 @@ global:
   persistence:
     enabled: true
     storageClass: ""
-    accessModes:
-      - ReadWriteOnce
+    accessModes: ["ReadWriteOnce"]
     size: 10Gi
 
 # Service Account Configuration
@@ -15,74 +16,56 @@ serviceAccount:
   create: true
   name: ""
   annotations: {}
+  automountServiceAccountToken: true
 
 # S3 Configuration
 s3:
   enabled: true
-  endpoint: s3.amazonaws.com
+  endpoint: s3.amazonaws.com  # For AWS, change for other providers
   region: us-east-1
   bucketNames:
-    chunks: loki-chunks
-    ruler: loki-ruler
-    admin: loki-admin
+    chunks: loki-chunks       # Replace with your bucket name
+    ruler: loki-ruler         # Replace with your bucket name
+    admin: loki-admin         # Replace with your bucket name
   s3ForcePathStyle: false
+  useIAM: false               # Set true for IAM roles
+  accessKeyId: ""             # Leave empty if using IAM
+  secretAccessKey: ""         # Leave empty if using IAM
   secretName: loki-s3-credentials
 
-# Components configuration
+# Core Components
 components:
   distributor:
     replicas: 2
     resources:
-      limits:
-        cpu: 500m
-        memory: 512Mi
-      requests:
-        cpu: 100m
-        memory: 128Mi
+      limits: { cpu: 500m, memory: 512Mi }
+      requests: { cpu: 100m, memory: 128Mi }
 
   ingester:
     replicas: 3
-    persistence:
-      size: 50Gi
+    persistence: { size: 50Gi }
     resources:
-      limits:
-        cpu: 1000m
-        memory: 2Gi
-      requests:
-        cpu: 500m
-        memory: 1Gi
+      limits: { cpu: 1000m, memory: 2Gi }
+      requests: { cpu: 500m, memory: 1Gi }
 
   querier:
     replicas: 2
     resources:
-      limits:
-        cpu: 1000m
-        memory: 2Gi
-      requests:
-        cpu: 500m
-        memory: 1Gi
+      limits: { cpu: 1000m, memory: 2Gi }
+      requests: { cpu: 500m, memory: 1Gi }
 
   queryFrontend:
     replicas: 2
     resources:
-      limits:
-        cpu: 500m
-        memory: 1Gi
-      requests:
-        cpu: 200m
-        memory: 512Mi
+      limits: { cpu: 500m, memory: 1Gi }
+      requests: { cpu: 200m, memory: 512Mi }
 
   compactor:
     replicas: 1
-    persistence:
-      size: 100Gi
+    persistence: { size: 100Gi }
     resources:
-      limits:
-        cpu: 1000m
-        memory: 2Gi
-      requests:
-        cpu: 500m
-        memory: 1Gi
+      limits: { cpu: 1000m, memory: 2Gi }
+      requests: { cpu: 500m, memory: 1Gi }
 
 # Monitoring
 monitoring:
@@ -99,17 +82,28 @@ service:
     http: 3100
     grpc: 9095
 
+# Gateway Configuration
 gateway:
   enabled: true
-  replicas: 2  # Fixed from typo 'replicas'
+  replicas: 2
   ingress:
     enabled: false
-    hosts:
-      - loki.example.com
+    hosts: [loki.example.com]
     annotations:
       kubernetes.io/ingress.class: nginx
 
-# Cache configuration
+# In-Memory Cache Configuration
 cache_config:
   enable_fifocache: true
   default_validity: 12h
+  fifocache:
+    max_size_bytes: 1GB
+    validity: 6h
+
+# Chunk Storage Optimization
+chunk_store_config:
+  max_look_back_period: 168h  # 7 days retention
+  chunk_cache_config:
+    enable_fifocache: true
+    fifocache:
+      max_size_bytes: 500MB
