@@ -20,6 +20,10 @@ data:
           bucketnames: {{ .Values.s3.bucketNames.chunks }}
           region: {{ .Values.s3.region }}
           s3forcepathstyle: {{ .Values.s3.s3ForcePathStyle }}
+          {{- if not .Values.s3.useIAM }}
+          access_key_id: ${AWS_ACCESS_KEY_ID}
+          secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+          {{- end }}
       replication_factor: 1
       ring:
         kvstore:
@@ -41,6 +45,10 @@ data:
         bucketnames: {{ .Values.s3.bucketNames.chunks }}
         region: {{ .Values.s3.region }}
         s3forcepathstyle: {{ .Values.s3.s3ForcePathStyle }}
+        {{- if not .Values.s3.useIAM }}
+        access_key_id: ${AWS_ACCESS_KEY_ID}
+        secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+        {{- end }}
       boltdb_shipper:
         active_index_directory: /var/loki/index
         cache_location: /var/loki/index_cache
@@ -56,11 +64,24 @@ data:
       reject_old_samples_max_age: 168h
     
     chunk_store_config:
-      max_look_back_period: 0s
+      max_look_back_period: 168h
+      chunk_cache_config:
+        enable_fifocache: true
+        fifocache:
+          max_size_bytes: 500MB
+          validity: 1h
     
     table_manager:
-      retention_deletes_enabled: false
-      retention_period: 0s
+      retention_deletes_enabled: true
+      retention_period: 168h
+    
+    query_range:
+      results_cache:
+        cache:
+          enable_fifocache: true
+          fifocache:
+            max_size_bytes: 1GB
+            validity: 6h
     
     ruler:
       storage:
@@ -70,6 +91,10 @@ data:
           bucketnames: {{ .Values.s3.bucketNames.ruler }}
           region: {{ .Values.s3.region }}
           s3forcepathstyle: {{ .Values.s3.s3ForcePathStyle }}
+          {{- if not .Values.s3.useIAM }}
+          access_key_id: ${AWS_ACCESS_KEY_ID}
+          secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+          {{- end }}
       rule_path: /var/loki/rules-temp
       alertmanager_url: http://alertmanager:9093
       ring:
