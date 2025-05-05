@@ -1,0 +1,126 @@
+global:
+  image:
+    repository: grafana/loki
+    tag: 2.8.0
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+
+# S3 Configuration
+s3:
+  enabled: true
+  endpoint: s3.amazonaws.com
+  region: us-east-1
+  bucketNames:
+    chunks: loki-chunks
+    ruler: loki-ruler
+    admin: loki-admin
+  s3ForcePathStyle: false
+  secretName: loki-s3-credentials
+
+# Components configuration
+components:
+  distributor:
+    replicas: 2
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+  ingester:
+    replicas: 3
+    persistence:
+      size: 50Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    # Increased in-memory cache for ingesters
+    config:
+      chunk_idle_period: 1h
+      chunk_target_size: 1572864  # 1.5MB
+      max_chunk_age: 2h
+
+  querier:
+    replicas: 2
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    # Query parallelization
+    config:
+      max_concurrent: 2048
+      timeout: 10m
+
+  queryFrontend:
+    replicas: 2
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    # In-memory result cache
+    config:
+      cache_results: true
+      max_cache_freshness: 1m
+
+  compactor:
+    replicas: 1
+    persistence:
+      size: 100Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 30s
+
+# Networking
+service:
+  type: ClusterIP
+  ports:
+    http: 3100
+    grpc: 9095
+
+gateway:
+  enabled: true
+  replicas: 2
+  ingress:
+    enabled: false
+    hosts:
+      - loki.example.com
+    annotations:
+      kubernetes.io/ingress.class: nginx
+
+# Cache configuration (in-memory only)
+cache_config:
+  enable_fifocache: true
+  default_validity: 12h
+  background_writeback: true
+  fifocache:
+    max_size_bytes: 1GB  # Per-component cache size
+    validity: 6h

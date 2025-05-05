@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "loki.fullname" . }}-ingester
+  labels:
+    {{- include "loki.labels" . | nindent 4 }}
+    component: ingester
+spec:
+  replicas: {{ .Values.components.ingester.replicas }}
+  serviceName: {{ include "loki.fullname" . }}-ingester
+  selector:
+    matchLabels:
+      {{- include "loki.selectorLabels" . | nindent 6 }}
+      component: ingester
+  template:
+    metadata:
+      labels:
+        {{- include "loki.selectorLabels" . | nindent 8 }}
+        component: ingester
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "http"
+    spec:
+      serviceAccountName: {{ include "loki.serviceAccountName" . }}
+      containers:
+        - name: ingester
+          image: "{{ .Values.global.image.repository }}:{{ .Values.global.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          args:
+            - "-target=ingester"
+            - "-config.file=/etc/loki/loki.yaml"
+          ports:
+            - name: http
+              containerPort: 3100
+              protocol: TCP
+            - name: grpc
+              containerPort: 9095
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 45
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 45
+          resources:
+            {{- toYaml .Values.components.ingester.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+            - name: storage
+              mountPath: /var/loki
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "loki.fullname" . }}-config
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes: {{ .Values.global.persistence.accessModes }}
+        resources:
+          requests:
+            storage: {{ .Values.components.ingester.persistence.size }}
+        {{- if .Values.global.persistence.storageClass }}
+        storageClassName: {{ .Values.global.persistence.storageClass }}
+        {{- end }}

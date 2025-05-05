@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "loki.fullname" . }}-compactor
+  labels:
+    {{- include "loki.labels" . | nindent 4 }}
+    component: compactor
+spec:
+  replicas: {{ .Values.components.compactor.replicas }}
+  serviceName: {{ include "loki.fullname" . }}-compactor
+  selector:
+    matchLabels:
+      {{- include "loki.selectorLabels" . | nindent 6 }}
+      component: compactor
+  template:
+    metadata:
+      labels:
+        {{- include "loki.selectorLabels" . | nindent 8 }}
+        component: compactor
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "http"
+    spec:
+      serviceAccountName: {{ include "loki.serviceAccountName" . }}
+      containers:
+        - name: compactor
+          image: "{{ .Values.global.image.repository }}:{{ .Values.global.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          args:
+            - "-target=compactor"
+            - "-config.file=/etc/loki/loki.yaml"
+          ports:
+            - name: http
+              containerPort: 3100
+              protocol: TCP
+            - name: grpc
+              containerPort: 9095
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 45
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 45
+          resources:
+            {{- toYaml .Values.components.compactor.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+            - name: storage
+              mountPath: /var/loki
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "loki.fullname" . }}-config
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes: {{ .Values.global.persistence.accessModes }}
+        resources:
+          requests:
+            storage: {{ .Values.components.compactor.persistence.size }}
+        {{- if .Values.global.persistence.storageClass }}
+        storageClassName: {{ .Values.global.persistence.storageClass }}
+        {{- end }}

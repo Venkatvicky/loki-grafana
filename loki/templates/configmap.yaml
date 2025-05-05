@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "loki.fullname" . }}-config
+  labels:
+    {{- include "loki.labels" . | nindent 4 }}
+data:
+  loki.yaml: |
+    auth_enabled: false
+    
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+    
+    common:
+      path_prefix: /var/loki
+      storage:
+        s3:
+          s3: {{ .Values.s3.endpoint }}
+          bucketnames: {{ .Values.s3.bucketNames.chunks }}
+          region: {{ .Values.s3.region }}
+          s3forcepathstyle: {{ .Values.s3.s3ForcePathStyle }}
+      replication_factor: 1
+      ring:
+        kvstore:
+          store: inmemory
+    
+    schema_config:
+      configs:
+        - from: 2020-10-24
+          store: boltdb-shipper
+          object_store: aws
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+    
+    storage_config:
+      aws:
+        s3: {{ .Values.s3.endpoint }}
+        bucketnames: {{ .Values.s3.bucketNames.chunks }}
+        region: {{ .Values.s3.region }}
+        s3forcepathstyle: {{ .Values.s3.s3ForcePathStyle }}
+      boltdb_shipper:
+        active_index_directory: /var/loki/index
+        cache_location: /var/loki/index_cache
+        shared_store: s3
+    
+    compactor:
+      working_directory: /var/loki/compactor
+      shared_store: s3
+    
+    limits_config:
+      enforce_metric_name: false
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+    
+    chunk_store_config:
+      max_look_back_period: 0s
+    
+    table_manager:
+      retention_deletes_enabled: false
+      retention_period: 0s
+    
+    ruler:
+      storage:
+        type: s3
+        s3:
+          s3: {{ .Values.s3.endpoint }}
+          bucketnames: {{ .Values.s3.bucketNames.ruler }}
+          region: {{ .Values.s3.region }}
+          s3forcepathstyle: {{ .Values.s3.s3ForcePathStyle }}
+      rule_path: /var/loki/rules-temp
+      alertmanager_url: http://alertmanager:9093
+      ring:
+        kvstore:
+          store: inmemory
+      enable_api: true
