@@ -16,7 +16,7 @@ rbac:
   create: true  # Set to false if you want to manage RBAC separately
   pspEnabled: false  # PodSecurityPolicy (deprecated in 1.25+) 
 
-  # Pod Disruption Budget
+# Pod Disruption Budget
 podDisruptionBudget:
   enabled: true
   minAvailable: 1  # Or use maxUnavailable: 1
@@ -117,3 +117,7 @@ chunk_store_config:
     enable_fifocache: true
     fifocache:
       max_size_bytes: 500MB
+
+# Network Policy Configuration
+networkPolicy:
+  enabled: false  # Set to true if you want to enforce Kubernetes network policies
