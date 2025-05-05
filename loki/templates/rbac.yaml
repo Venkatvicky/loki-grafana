@@ -1,4 +1,4 @@
-{{- if .Values.rbac.create }}
+{{- if .Values.rbac.create -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -9,9 +9,15 @@ rules:
   - apiGroups: [""]
     resources: ["pods", "services", "endpoints"]
     verbs: ["get", "list", "watch"]
-  - apiGroups: ["extensions"]
+  - apiGroups: ["extensions", "networking.k8s.io"]
     resources: ["ingresses"]
     verbs: ["get", "list", "watch"]
+  {{- if .Values.rbac.pspEnabled }}
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]
+    resourceNames: [{{ include "loki.fullname" . }}]
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
