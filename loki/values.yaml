@@ -60,6 +60,8 @@ components:
 
   querier:
     replicas: 2
+    config:
+      compactor_grpc_address: "dns://loki-compactor.loki.svc.cluster.local:9095"
     resources:
       limits: { cpu: 1000m, memory: 2Gi }
       requests: { cpu: 500m, memory: 1Gi }
@@ -151,7 +153,7 @@ grafana:
             "datasource": "Loki",
             "targets": [
               {
-                "expr": "sum(rate({job=~\"$application\"}[5m]) by (level)",
+                "expr": "sum(rate({job=~\"$application\"}[5m])) by (level)",
                 "legendFormat": "{{level}}"
               }
             ],
