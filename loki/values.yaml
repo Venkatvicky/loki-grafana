@@ -50,14 +50,17 @@ loki:
     compactor:
       working_directory: /var/loki/compactor
       shared_store: s3
-      compaction_interval: 10m
+      compaction_interval: 5m
+      retention_enabled: true
+      retention_delete_delay: 2h
+      delete_request_store: s3
 
     schema_config:
       configs:
-        - from: 2020-10-24
+        - from: "2024-01-01"
           store: boltdb-shipper
           object_store: s3
-          schema: v11
+          schema: v12
           index:
             prefix: index_
             period: 24h
@@ -273,6 +276,6 @@ s3:
     admin: loki-admin
   s3ForcePathStyle: false
   useIAM: false
-  accessKeyId: ""
-  secretAccessKey: ""
+  accessKeyId: "<YOUR_ACCESS_KEY_ID>"
+  secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
   secretName: loki-s3-credentials
