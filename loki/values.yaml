@@ -13,13 +13,13 @@ global:
 
 # RBAC Configuration
 rbac:
-  create: true  # Set to false if you want to manage RBAC separately
-  pspEnabled: false  # PodSecurityPolicy (deprecated in 1.25+) 
+  create: true
+  pspEnabled: false
 
 # Pod Disruption Budget
 podDisruptionBudget:
   enabled: true
-  minAvailable: 1  # Or use maxUnavailable: 1
+  minAvailable: 1
 
 # Service Account Configuration
 serviceAccount:
@@ -31,16 +31,16 @@ serviceAccount:
 # S3 Configuration
 s3:
   enabled: true
-  endpoint: s3.amazonaws.com  # For AWS, change for other providers
+  endpoint: s3.amazonaws.com
   region: us-east-1
   bucketNames:
-    chunks: loki-chunks       # Replace with your bucket name
-    ruler: loki-ruler         # Replace with your bucket name
-    admin: loki-admin         # Replace with your bucket name
+    chunks: loki-chunks
+    ruler: loki-ruler
+    admin: loki-admin
   s3ForcePathStyle: false
-  useIAM: false               # Set true for IAM roles
-  accessKeyId: ""             # Leave empty if using IAM
-  secretAccessKey: ""         # Leave empty if using IAM
+  useIAM: false
+  accessKeyId: ""
+  secretAccessKey: ""
   secretName: loki-s3-credentials
 
 # Core Components
@@ -112,7 +112,7 @@ cache_config:
 
 # Chunk Storage Optimization
 chunk_store_config:
-  max_look_back_period: 168h  # 7 days retention
+  max_look_back_period: 168h
   chunk_cache_config:
     enable_fifocache: true
     fifocache:
@@ -120,7 +120,7 @@ chunk_store_config:
 
 # Network Policy
 networkPolicy:
-  enabled: false  # Set to true if you want to enforce Kubernetes network policies
+  enabled: false
 
 # Autoscaling Configuration
 autoscaling:
@@ -128,3 +128,68 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 3
   targetCPUUtilizationPercentage: 80
+
+# Grafana Dashboard Configuration
+grafana:
+  dashboard:
+    enabled: true
+    namespace: "monitoring"  # Namespace where Grafana is installed
+    labels:
+      grafana_dashboard: "1"
+    configMap:
+      name: loki-grafana-dashboard
+      annotations: {}
+    json: |
+      {
+        "title": "Loki Logs Monitoring",
+        "description": "Comprehensive dashboard for Loki logs",
+        "editable": true,
+        "panels": [
+          {
+            "title": "Log Volume",
+            "type": "graph",
+            "datasource": "Loki",
+            "targets": [
+              {
+                "expr": "sum(rate({job=~\"$application\"}[5m]) by (level)",
+                "legendFormat": "{{level}}"
+              }
+            ],
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+          },
+          {
+            "title": "Error Rate",
+            "type": "stat",
+            "datasource": "Loki",
+            "targets": [
+              {
+                "expr": "sum(rate({job=~\"$application\"} |~ \"error|fail|fatal\" [5m]))",
+                "legendFormat": "Errors"
+              }
+            ],
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+          },
+          {
+            "title": "Log Explorer",
+            "type": "logs",
+            "datasource": "Loki",
+            "targets": [
+              {
+                "expr": "{job=~\"$application\"}",
+                "refId": "A"
+              }
+            ],
+            "gridPos": { "h": 12, "w": 24, "x": 0, "y": 8 }
+          }
+        ],
+        "templating": {
+          "list": [
+            {
+              "name": "application",
+              "query": "label_values(loki_log_messages_total, job)",
+              "refresh": 1,
+              "type": "query"
+            }
+          ]
+        }
+      }
