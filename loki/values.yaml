@@ -11,6 +11,70 @@ global:
     accessModes: ["ReadWriteOnce"]
     size: 10Gi
 
+# Loki config
+loki:
+  config: |
+    auth_enabled: false
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+    distributor:
+      ring:
+        kvstore:
+          store: memberlist
+    ingester:
+      lifecycler:
+        ring:
+          kvstore:
+            store: memberlist
+          replication_factor: 1
+        final_sleep: 0s
+    querier:
+      query_timeout: 1m
+      engine:
+        timeout: 1m
+      compactor_grpc_address: "dns://loki-compactor.loki.svc.cluster.local:9095"
+    query_range:
+      align_queries_with_step: true
+      max_retries: 5
+      parallelise_shardable_queries: true
+      results_cache:
+        cache:
+          enable_fifocache: true
+          fifocache:
+            max_size_items: 1024
+            validity: 24h
+    compactor:
+      working_directory: /var/loki/compactor
+      shared_store: s3
+    schema_config:
+      configs:
+        - from: 2020-10-24
+          store: boltdb-shipper
+          object_store: s3
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+    storage_config:
+      aws:
+        s3: s3://<your-s3-access-key>:<your-secret-key>@s3.amazonaws.com/<your-bucket-name>
+        region: us-east-1
+        s3forcepathstyle: false
+      boltdb_shipper:
+        active_index_directory: /var/loki/index
+        cache_location: /var/loki/cache
+        shared_store: s3
+    limits_config:
+      enforce_metric_name: false
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+    chunk_store_config:
+      max_look_back_period: 168h
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 336h
+
 # RBAC Configuration
 rbac:
   create: true
@@ -60,8 +124,6 @@ components:
 
   querier:
     replicas: 2
-    config:
-      compactor_grpc_address: "dns://loki-compactor.loki.svc.cluster.local:9095"
     resources:
       limits: { cpu: 1000m, memory: 2Gi }
       requests: { cpu: 500m, memory: 1Gi }
@@ -153,7 +215,7 @@ grafana:
             "datasource": "Loki",
             "targets": [
               {
-                "expr": "sum(rate({job=~\"$application\"}[5m])) by (level)",
+                "expr": "sum(rate({job=~\"$application\"}[5m]) by (level) ",
                 "legendFormat": "{{level}}"
               }
             ],
