@@ -102,7 +102,7 @@ serviceAccount:
   automountServiceAccountToken: true
 
 components:
-  querier:
+ distributor:
     replicas: 2
     resources:
       limits:
