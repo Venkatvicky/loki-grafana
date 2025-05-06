@@ -34,7 +34,7 @@ loki:
       query_timeout: 1m
       engine:
         timeout: 1m
-      compactor_grpc_address: "loki-compactor:9095"  # Ensure this matches your compactor service name
+      compactor_grpc_address: "loki-compactor:9095"
 
     query_range:
       align_queries_with_step: true
@@ -102,8 +102,8 @@ serviceAccount:
   automountServiceAccountToken: true
 
 components:
- distributor:
-    replicas: 2
+  distributor:
+    replicas: 2  # Replicas set to 2
     resources:
       limits:
         cpu: 2000m
