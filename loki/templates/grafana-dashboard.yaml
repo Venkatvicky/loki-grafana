@@ -17,7 +17,7 @@ data:
           "type": "graph",
           "targets": [{
             "expr": "sum(rate(loki_log_messages_total[5m])) by (level)",
-            "legendFormat": "{{ '{{level}}' }}"
+            "legendFormat": "{{`{{level}}`}}"
           }]
         },
         {
