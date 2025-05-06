@@ -1,27 +1,27 @@
-# values.yaml - Complete Loki Configuration with S3
-
 global:
   image:
     repository: grafana/loki
     tag: 2.8.0
     pullPolicy: IfNotPresent
+
   persistence:
     enabled: true
     storageClass: ""
     accessModes: ["ReadWriteOnce"]
     size: 10Gi
 
-# Loki config
 loki:
-  config: |
+  config:
     auth_enabled: false
     server:
       http_listen_port: 3100
       grpc_listen_port: 9095
+
     distributor:
       ring:
         kvstore:
           store: memberlist
+
     ingester:
       lifecycler:
         ring:
@@ -29,11 +29,13 @@ loki:
             store: memberlist
           replication_factor: 1
         final_sleep: 0s
+
     querier:
       query_timeout: 1m
       engine:
         timeout: 1m
-      compactor_grpc_address: "dns://loki-compactor.loki.svc.cluster.local:9095"
+      compactor_grpc_address: "loki-compactor:9095"
+
     query_range:
       align_queries_with_step: true
       max_retries: 5
@@ -44,9 +46,11 @@ loki:
           fifocache:
             max_size_items: 1024
             validity: 24h
+
     compactor:
       working_directory: /var/loki/compactor
       shared_store: s3
+
     schema_config:
       configs:
         - from: 2020-10-24
@@ -56,92 +60,98 @@ loki:
           index:
             prefix: index_
             period: 24h
+
     storage_config:
       aws:
-        s3: s3://<your-s3-access-key>:<your-secret-key>@s3.amazonaws.com/<your-bucket-name>
+        s3: s3://<your-access-key>:<your-secret-key>@s3.amazonaws.com/<your-bucket-name>
         region: us-east-1
         s3forcepathstyle: false
       boltdb_shipper:
         active_index_directory: /var/loki/index
         cache_location: /var/loki/cache
         shared_store: s3
+
     limits_config:
       enforce_metric_name: false
       reject_old_samples: true
       reject_old_samples_max_age: 168h
+
     chunk_store_config:
       max_look_back_period: 168h
+
     table_manager:
       retention_deletes_enabled: true
       retention_period: 336h
 
-# RBAC Configuration
 rbac:
   create: true
   pspEnabled: false
 
-# Pod Disruption Budget
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
 
-# Service Account Configuration
 serviceAccount:
   create: true
   name: ""
   annotations: {}
   automountServiceAccountToken: true
 
-# S3 Configuration
-s3:
-  enabled: true
-  endpoint: s3.amazonaws.com
-  region: us-east-1
-  bucketNames:
-    chunks: loki-chunks
-    ruler: loki-ruler
-    admin: loki-admin
-  s3ForcePathStyle: false
-  useIAM: false
-  accessKeyId: ""
-  secretAccessKey: ""
-  secretName: loki-s3-credentials
-
-# Core Components
 components:
   distributor:
     replicas: 2
     resources:
-      limits: { cpu: 500m, memory: 512Mi }
-      requests: { cpu: 100m, memory: 128Mi }
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
 
   ingester:
     replicas: 3
-    persistence: { size: 50Gi }
+    persistence:
+      size: 50Gi
     resources:
-      limits: { cpu: 1000m, memory: 2Gi }
-      requests: { cpu: 500m, memory: 1Gi }
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
 
   querier:
     replicas: 2
     resources:
-      limits: { cpu: 1000m, memory: 2Gi }
-      requests: { cpu: 500m, memory: 1Gi }
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
 
   queryFrontend:
     replicas: 2
     resources:
-      limits: { cpu: 500m, memory: 1Gi }
-      requests: { cpu: 200m, memory: 512Mi }
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
 
   compactor:
     replicas: 1
-    persistence: { size: 100Gi }
+    persistence:
+      size: 100Gi
     resources:
-      limits: { cpu: 1000m, memory: 2Gi }
-      requests: { cpu: 500m, memory: 1Gi }
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
 
-# Monitoring
 monitoring:
   enabled: true
   serviceMonitor:
@@ -149,24 +159,22 @@ monitoring:
     interval: 30s
     scrapeTimeout: 30s
 
-# Networking
 service:
   type: ClusterIP
   ports:
     http: 3100
     grpc: 9095
 
-# Gateway Configuration
 gateway:
   enabled: true
   replicas: 2
   ingress:
     enabled: false
-    hosts: [loki.example.com]
+    hosts:
+      - loki.example.com
     annotations:
       kubernetes.io/ingress.class: nginx
 
-# In-Memory Cache Configuration
 cache_config:
   enable_fifocache: true
   default_validity: 12h
@@ -174,7 +182,6 @@ cache_config:
     max_size_bytes: 1GB
     validity: 6h
 
-# Chunk Storage Optimization
 chunk_store_config:
   max_look_back_period: 168h
   chunk_cache_config:
@@ -182,22 +189,19 @@ chunk_store_config:
     fifocache:
       max_size_bytes: 500MB
 
-# Network Policy
 networkPolicy:
   enabled: false
 
-# Autoscaling Configuration
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 3
   targetCPUUtilizationPercentage: 80
 
-# Grafana Dashboard Configuration
 grafana:
   dashboard:
     enabled: true
-    namespace: "monitoring"  # Namespace where Grafana is installed
+    namespace: monitoring
     labels:
       grafana_dashboard: "1"
     configMap:
@@ -215,7 +219,7 @@ grafana:
             "datasource": "Loki",
             "targets": [
               {
-                "expr": "sum(rate({job=~\"$application\"}[5m]) by (level) ",
+                "expr": "sum(rate({job=~\"$application\"}[5m])) by (level)",
                 "legendFormat": "{{level}}"
               }
             ],
@@ -257,3 +261,17 @@ grafana:
           ]
         }
       }
+
+s3:
+  enabled: true
+  endpoint: s3.amazonaws.com
+  region: us-east-1
+  bucketNames:
+    chunks: loki-chunks
+    ruler: loki-ruler
+    admin: loki-admin
+  s3ForcePathStyle: false
+  useIAM: false
+  accessKeyId: ""
+  secretAccessKey: ""
+  secretName: loki-s3-credentials
