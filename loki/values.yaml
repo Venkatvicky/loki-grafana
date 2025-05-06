@@ -50,6 +50,7 @@ loki:
     compactor:
       working_directory: /var/loki/compactor
       shared_store: s3
+      compaction_interval: 10m
 
     schema_config:
       configs:
