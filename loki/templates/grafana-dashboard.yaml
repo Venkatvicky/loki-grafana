@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "loki.fullname" . }}-grafana-dashboard
+  labels:
+    {{- include "loki.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  loki-overview.json: |-
+    {
+      "title": "Loki Logs Overview",
+      "description": "Prebuilt dashboard for Loki logs analysis",
+      "tags": ["loki", "logs"],
+      "panels": [
+        {
+          "title": "Log Volume",
+          "type": "graph",
+          "targets": [{
+            "expr": "sum(rate(loki_log_messages_total[5m])) by (level)",
+            "legendFormat": "{{level}}"
+          }]
+        },
+        {
+          "title": "Recent Logs",
+          "type": "logs",
+          "targets": [{
+            "expr": "{job=~\"$application\"}",
+            "refId": "A"
+          }]
+        }
+      ],
+      "templating": {
+        "list": [{
+          "name": "application",
+          "query": "label_values(loki_log_messages_total, job)",
+          "refresh": 1
+        }]
+      }
+    }
